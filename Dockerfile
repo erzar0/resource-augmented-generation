@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ /code/
 
-EXPOSE 8000
+EXPOSE 8888
 
-HEALTHCHECK CMD curl --fail http://localhost:8000/_stcore/health || exit 1
+HEALTHCHECK CMD curl --fail http://localhost:8888/_stcore/health || exit 1
 
-ENTRYPOINT ["streamlit", "run", "src/app.py", "--server.port=8000", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "src/app.py", "--server.port=8888", "--server.address=0.0.0.0"]

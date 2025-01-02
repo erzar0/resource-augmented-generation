@@ -3,10 +3,10 @@ services:
     build: .
     container_name: app
     ports:
-      - "8000:8000"
+      - "8888:8888"
     volumes:
       - .:/code
-    command: streamlit run src/app.py --server.port=8000 --server.address=0.0.0.0
+    command: streamlit run src/app.py --server.port=8888 --server.address=0.0.0.0
     restart: always
     depends_on:
       - ollama
