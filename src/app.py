@@ -47,7 +47,7 @@ def upload_and_vectorize_file(file) -> str:
     try:
         content = file.read().decode("utf-8")
 
-        texts = list(RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100).split_text(content))
+        texts = list(RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content))
         
         st.write("Vectorizing text...")
         progress_bar = st.progress(0)
