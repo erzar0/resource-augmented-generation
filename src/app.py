@@ -64,7 +64,7 @@ def upload_and_vectorize_file(file) -> str:
         progress_bar.progress(100)
         doc_count_placeholder.write("Vectorization complete.")
 
-        return f"File successfully vectorized and stored in {VECTORSTORE_NAME}/{COLLECTION_NAME}."
+        return "File successfully vectorized!"
     except Exception as e:
         vectorstore.delete_collection()
         return f"Error processing file: {e}"
@@ -92,53 +92,69 @@ def generate_response_with_ollama(prompt: str) -> Generator[any, any, any]:
         st.error(f"Error communicating with Ollama API: {e}")
         return ""
 
-st.title("🔍 LekturR")
 
-uploaded_file = st.file_uploader("Upload a .txt file to vectorize:", type=["txt"])
+st.set_page_config(layout="wide")
 
-if st.button("Vectorize File"):
-    if uploaded_file:
-        result = upload_and_vectorize_file(uploaded_file)
-        st.write(result)
-    else:
-        st.write("Please upload a .txt file before clicking the button.")
+_, col1, _ = st.columns([1, 2, 1])
 
+with col1:
+    st.title("🔍 LekturR")
+    st.markdown(
+        "Welcome to **LekturR**! Upload your file, vectorize it, and search for relevant information."
+    )
 
-query = st.text_input("Enter your prompt:")
-top_k = st.slider("Number of documents to retrieve:", 1, 5, 1)
+    st.sidebar.header("📂 Upload Your File")
+    uploaded_file = st.sidebar.file_uploader("Upload a .txt file to vectorize:", type=["txt"])
 
-if st.button("Submit Query"):
-    if query:
-        st.write("### Querying relevant documents...")
-        relevant_docs = query_vector_db(query, top_k)
-
-        if relevant_docs:
-            st.write("### Retrieved Documents:")
-            for i, doc in enumerate(relevant_docs, start=1):
-                color = "#222222" if i % 2 == 0 else "#444444"
-                text_color = "#FFFFFF"
-                styled_doc = f"""
-                <div style='background-color: {color}; color: {text_color}; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
-                    <strong>Document {i}:</strong> {doc}
-                </div>
-                """
-                st.markdown(styled_doc, unsafe_allow_html=True)
-
-            context = "\n".join(relevant_docs)
-            prompt = f"""
-                      Given the following context:\n{context}
-                      Answer the following question:\n{query}
-                      If given context CONTAINS ENOUGH information, answer the question directly. 
-                      If given context DOES NOT CONTAIN ENOUGH information or information is NOT RELEVANT, say so and ask for more details. 
-                      Under ANY CIRCUMSTANCES do not provide answear on IRRELEVANT questions.
-                      Answer:
-                      """
-
-            st.write_stream(generate_response_with_ollama(prompt))
+    if st.sidebar.button("Vectorize File"):
+        if uploaded_file:
+            result = upload_and_vectorize_file(uploaded_file)
+            st.sidebar.success(result)
         else:
-            st.write("### Failed To Retrieve Documents.")
-            prompt = f"Say to the user that no related documents were found for their query: {query}."
+            st.sidebar.error("Please upload a .txt file before clicking the button.")
 
-            st.write_stream(generate_response_with_ollama(prompt))
-    else:
-        st.write("Please enter a query.")
+    st.header("💡 Query Relevant Information")
+    query = st.text_input("Enter your prompt:")
+    top_k = st.slider("🔍 Number of documents to retrieve:", 1, 5, 1)
+
+    if st.button("Submit Query"):
+        if query:
+            st.markdown("### 🔄 Querying relevant documents...")
+
+            relevant_docs = query_vector_db(query, top_k)
+
+            if relevant_docs:
+                col1, col2 = st.columns([1, 1])
+
+                with col1:
+                    st.subheader("📄 Retrieved Documents")
+                    for i, doc in enumerate(relevant_docs, start=1):
+                        color = "#222222" if i % 2 == 0 else "#444444"
+                        styled_doc = f"""
+                        <div style='background-color: {color}; padding: 15px; border-radius: 8px; margin-bottom: 10px;'>
+                            <strong>Document {i}:</strong> {doc}
+                        </div>
+                        """
+                        st.markdown(styled_doc, unsafe_allow_html=True)
+
+                with col2:
+                    st.subheader("🤖 AI Response")
+
+                    with st.spinner("Generating response... Please wait."):
+                        context = "\n".join(relevant_docs)
+                        prompt = f"""
+                                Given the following context:\n{context}
+                                Answer the following question:\n{query}
+                                If the context contains enough information, answer the question directly. 
+                                If it does not contain enough information or is irrelevant, say so and ask for more details. 
+                                Do not provide answers to irrelevant questions.
+                                Answer:
+                                """
+                        st.write_stream(generate_response_with_ollama(prompt))
+
+            else:
+                st.error("No relevant documents found for your query.")
+                prompt = f"Notify the user that no related documents were found for their query: {query}."
+                st.write_stream(generate_response_with_ollama(prompt))
+        else:
+            st.warning("Please enter a query to proceed.")
