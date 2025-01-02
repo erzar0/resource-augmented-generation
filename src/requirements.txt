@@ -1,0 +1,10 @@
+chromadb
+debugpy
+langchain
+langchain-chroma
+langchain-community
+langchainhub
+requests
+streamlit
+sentence-transformers
+

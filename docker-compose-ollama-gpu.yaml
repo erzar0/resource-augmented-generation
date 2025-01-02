@@ -1,0 +1,66 @@
+services:
+  app:
+    build: .
+    container_name: app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code
+    command: streamlit run src/app.py --server.port=8000 --server.address=0.0.0.0
+    restart: always
+    depends_on:
+      - ollama
+      - ollama-webui
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M}
+    networks:
+      - app_network
+
+  ollama:
+    image: ollama/ollama:0.5.4
+    container_name: ollama
+    ports:
+      - "7869:11434"
+    volumes:
+      - ./ollama/ollama:/root/.ollama
+    pull_policy: always
+    tty: true
+    restart: always
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+      - MODELS=${OLLAMA_MODEL:-SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M}
+    networks:
+      - app_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  ollama-webui:
+    image: ghcr.io/open-webui/open-webui:0.5.3
+    container_name: ollama-webui
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./ollama/ollama-webui:/app/backend/data
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_BASE_URLS=http://ollama:11434
+      - ENV=dev
+      - WEBUI_URL=http://localhost:8080
+      - WEBUI_AUTH=False
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-some_secret_key} # Parameterized secret key
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Allows accessing host machine from Docker container
+    restart: unless-stopped
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
