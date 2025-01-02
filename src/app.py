@@ -56,7 +56,7 @@ def upload_and_vectorize_file(file) -> str:
         doc_count_placeholder = st.empty()
 
         for i, doc in enumerate(texts):
-            vectorstore.add_texts([doc], ids=[hash(doc)])
+            vectorstore.add_texts([doc])
 
             progress_bar.progress(int((i + 1) / total_texts * 100))
             doc_count_placeholder.write(f"Processed {i + 1}/{total_texts} documents")
