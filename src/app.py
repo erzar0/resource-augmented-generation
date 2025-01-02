@@ -47,7 +47,7 @@ def upload_and_vectorize_file(file) -> str:
     try:
         content = file.read().decode("utf-8")
 
-        texts = list(RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content))
+        texts = list(RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100).split_text(content))
         
         st.write("Vectorizing text...")
         progress_bar = st.progress(0)
@@ -105,7 +105,7 @@ if st.button("Vectorize File"):
 
 
 query = st.text_input("Enter your prompt:")
-top_k = st.slider("Number of documents to retrieve:", 1, 10, 3)
+top_k = st.slider("Number of documents to retrieve:", 1, 5, 1)
 
 if st.button("Submit Query"):
     if query:
@@ -115,10 +115,24 @@ if st.button("Submit Query"):
         if relevant_docs:
             st.write("### Retrieved Documents:")
             for i, doc in enumerate(relevant_docs, start=1):
-                st.write(f"**Document {i}:** {doc}")
+                color = "#222222" if i % 2 == 0 else "#444444"
+                text_color = "#FFFFFF"
+                styled_doc = f"""
+                <div style='background-color: {color}; color: {text_color}; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
+                    <strong>Document {i}:</strong> {doc}
+                </div>
+                """
+                st.markdown(styled_doc, unsafe_allow_html=True)
 
             context = "\n".join(relevant_docs)
-            prompt = f"Given the following context:\n{context}\n\nAnswer the following question:\n{query}"
+            prompt = f"""
+                      Given the following context:\n{context}
+                      Answer the following question:\n{query}
+                      If given context CONTAINS ENOUGH information, answer the question directly. 
+                      If given context DOES NOT CONTAIN ENOUGH information or information is NOT RELEVANT, say so and ask for more details. 
+                      Under ANY CIRCUMSTANCES do not provide answear on IRRELEVANT questions.
+                      Answer:
+                      """
 
             st.write_stream(generate_response_with_ollama(prompt))
         else:
@@ -128,4 +142,3 @@ if st.button("Submit Query"):
             st.write_stream(generate_response_with_ollama(prompt))
     else:
         st.write("Please enter a query.")
-
