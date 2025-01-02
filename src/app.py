@@ -12,6 +12,7 @@ from typing import List, Generator
 VECTORSTORE_NAME = "chromadb"
 COLLECTION_NAME = "LekturR"
 EMBEDDING_MODEL = "OrlikB/KartonBERT-USE-base-v1"
+OLLAMA_API_URL = "http://ollama:11434/api"
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL")
 
 class SentenceTransformersEmbeddings(Embeddings):
@@ -73,7 +74,7 @@ def generate_response_with_ollama(prompt: str) -> Generator[any, any, any]:
     """Generate a response using Ollama's API."""
     try:
         response = requests.post(
-            "http://ollama:11434/api/generate",
+            f"{OLLAMA_API_URL}/generate",
             json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": True},
             stream=True
         )

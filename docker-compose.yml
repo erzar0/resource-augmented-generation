@@ -12,7 +12,7 @@ services:
       - ollama
       - ollama-webui
     environment:
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M}
+      - OLLAMA_MODEL=SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M
     networks:
       - app_network
 
@@ -29,7 +29,6 @@ services:
     environment:
       - OLLAMA_KEEP_ALIVE=24h
       - OLLAMA_HOST=0.0.0.0
-      - MODELS=${OLLAMA_MODEL:-SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M}
     networks:
       - app_network
 
@@ -53,6 +52,17 @@ services:
     restart: unless-stopped
     networks:
       - app_network
+
+  curl-model:
+    image: curlimages/curl:latest
+    container_name: kurlaj_model
+    command: >
+      curl http://ollama:11434/api/pull -d '{"model": "SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M"}'
+    restart: on-failure
+    networks:
+      - app_network
+    depends_on:
+      - ollama
 
 networks:
   app_network:
