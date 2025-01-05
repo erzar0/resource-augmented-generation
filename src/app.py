@@ -94,7 +94,7 @@ def generate_response_with_ollama(prompt: str) -> Generator[any, any, any]:
 
 st.set_page_config(page_title="LekturR", layout="wide", page_icon="🔍")
 
-_, col1, _ = st.columns([1, 2, 1])
+_, col1, _ = st.columns([1, 4, 1])
 
 with col1:
     st.title("🔍 LekturR")
