@@ -12,7 +12,7 @@ services:
       - ollama
       - ollama-webui
     environment:
-      - OLLAMA_MODEL=SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M
+      - OLLAMA_MODEL=library/qwen2.5:3b
     networks:
       - app_network
 
@@ -53,16 +53,27 @@ services:
     networks:
       - app_network
 
-  curl-model:
+  curl-qwen:
     image: curlimages/curl:latest
-    container_name: kurlaj_model
+    container_name: curl-qwen
+    command: >
+      curl http://ollama:11434/api/pull -d '{"model": "library/qwen2.5:3b"}'
+    restart: on-failure
+    networks:
+      - app_network
+    depends_on:
+      - ollama
+
+  curl-bielik:
+    image: curlimages/curl:latest
+    container_name: curl-bielik
     command: >
       curl http://ollama:11434/api/pull -d '{"model": "SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M"}'
     restart: on-failure
     networks:
       - app_network
     depends_on:
-      - ollama
+      - curl-qwen
 
 networks:
   app_network:
