@@ -49,11 +49,11 @@ def upload_and_vectorize_file(file) -> str:
         content = file.read().decode("utf-8")
 
         texts = list(RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content))
-        
+
         st.write("Vectorizing text...")
         progress_bar = st.progress(0)
         total_texts = len(texts)
-        
+
         doc_count_placeholder = st.empty()
 
         for i, doc in enumerate(texts):
@@ -103,6 +103,20 @@ with col1:
     st.markdown(
         "Welcome to **LekturR**! Upload your file, vectorize it, and search for relevant information."
     )
+
+    st.sidebar.header("📜 Select LLM")
+    selected_model = st.sidebar.radio(
+        "Bigger models require more memory. Make sure to select a model suitable for your computer!",
+        ["Qwen2.5", "Bielik-11B-v2.3-Instruct"],
+        captions=[
+            "1.9 GB",
+            "6.7 GB",
+        ],
+    )
+    if selected_model == "Qwen2.5":
+        OLLAMA_MODEL = "library/qwen2.5:3b"
+    else:
+        OLLAMA_MODEL = "SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M"
 
     st.sidebar.header("📂 Upload Your File")
     uploaded_file = st.sidebar.file_uploader("Upload a .txt file to vectorize:", type=["txt"])
