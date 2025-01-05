@@ -1,4 +1,3 @@
-import os
 import requests
 import json
 import streamlit as st
@@ -13,7 +12,7 @@ VECTORSTORE_NAME = "chromadb"
 COLLECTION_NAME = "LekturR"
 EMBEDDING_MODEL = "OrlikB/KartonBERT-USE-base-v1"
 OLLAMA_API_URL = "http://ollama:11434/api"
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL")
+OLLAMA_MODEL = "library/qwen2.5:3b"
 
 class SentenceTransformersEmbeddings(Embeddings):
     """Implementation of the Embeddings interface using Sentence Transformers."""
