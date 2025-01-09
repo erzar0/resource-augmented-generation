@@ -9,7 +9,6 @@ from langchain_core.documents import Document
 from typing import List, Generator
 
 VECTORSTORE_NAME = "chromadb"
-COLLECTION_NAME = "LekturR"
 EMBEDDING_MODEL = "OrlikB/KartonBERT-USE-base-v1"
 OLLAMA_API_URL = "http://ollama:11434/api"
 OLLAMA_MODEL = "library/qwen2.5:3b"
@@ -31,19 +30,19 @@ class SentenceTransformersEmbeddings(Embeddings):
 
 embedding = SentenceTransformersEmbeddings(model_name=EMBEDDING_MODEL)
 
-def query_vector_db(query: str, top_k: int = 5) -> List[str]:
+def query_vector_db(query: str, selected_collection, top_k: int = 5) -> List[str]:
     """Query the locally persisted Chroma vector database for relevant documents."""
     try:
-        vectorstore = Chroma(persist_directory=VECTORSTORE_NAME, embedding_function=embedding, collection_name=COLLECTION_NAME)
+        vectorstore = Chroma(persist_directory=VECTORSTORE_NAME, embedding_function=embedding, collection_name=selected_collection)
         results: List[Document] = vectorstore.similarity_search(query, k=top_k)
         return [result.page_content for result in results]
     except Exception as e:
         st.error(f"Error querying the vector database: {e}")
         return []
 
-def upload_and_vectorize_file(file) -> str:
+def upload_and_vectorize_file(file, selected_collection) -> str:
     """Upload a .txt file and vectorize its content with a loading bar and document count."""
-    vectorstore = Chroma(persist_directory=VECTORSTORE_NAME, embedding_function=embedding, collection_name=COLLECTION_NAME)
+    vectorstore = Chroma(persist_directory=VECTORSTORE_NAME, embedding_function=embedding, collection_name=selected_collection)
     try:
         content = file.read().decode("utf-8")
 
@@ -93,9 +92,9 @@ def generate_response_with_ollama(prompt: str) -> Generator[any, any, any]:
         return ""
 
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="LekturR", layout="wide", page_icon="🔍")
 
-_, col1, _ = st.columns([1, 2, 1])
+_, col1, _ = st.columns([1, 4, 1])
 
 with col1:
     st.title("🔍 LekturR")
@@ -117,15 +116,35 @@ with col1:
     else:
         OLLAMA_MODEL = "SpeakLeash/bielik-11b-v2.3-instruct:Q4_K_M"
 
+    st.sidebar.header("🗒️ Select Collection")
+    st.sidebar.markdown("Select collection or create a new one to store similar documents")
+    vectorstore = Chroma(persist_directory=VECTORSTORE_NAME, embedding_function=embedding)
+    collections = vectorstore._client.list_collections()
+    collection_names = [x.name for x in collections if x.name != 'langchain']
+
+    selected_collection = st.sidebar.selectbox("Select collection", collection_names)
+
+    st.sidebar.markdown('or')
+
+    collection_name = st.sidebar.text_input("Create new collection", key="create_collection")
+    if st.sidebar.button("Create Collection"):
+        if collection_name:
+            collection_name = collection_name.lower().replace(" ", "_")
+            Chroma(persist_directory=VECTORSTORE_NAME, embedding_function=embedding, collection_name=collection_name)
+            st.sidebar.success(f"Collection {collection_name} created.")
+        else:
+            st.sidebar.error("Please enter a collection name before creating it.")
+
     st.sidebar.header("📂 Upload Your File")
     uploaded_file = st.sidebar.file_uploader("Upload a .txt file to vectorize:", type=["txt"])
 
     if st.sidebar.button("Vectorize File"):
         if uploaded_file:
-            result = upload_and_vectorize_file(uploaded_file)
+            result = upload_and_vectorize_file(uploaded_file, selected_collection)
             st.sidebar.success(result)
         else:
             st.sidebar.error("Please upload a .txt file before clicking the button.")
+
 
     st.header("💡 Query Relevant Information")
     query = st.text_input("Enter your prompt:")
@@ -135,7 +154,7 @@ with col1:
         if query:
             st.markdown("### 🔄 Querying relevant documents...")
 
-            relevant_docs = query_vector_db(query, top_k)
+            relevant_docs = query_vector_db(query, selected_collection, top_k)
 
             if relevant_docs:
                 col1, col2 = st.columns([1, 1])
